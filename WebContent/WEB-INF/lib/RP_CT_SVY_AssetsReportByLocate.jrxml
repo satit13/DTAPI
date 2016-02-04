@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RP_CT_SVY_AssetsReportByAssetsType" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="52"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[exec dbo.USP_CT_SVY_AssetsReportByCondition 2,'022','040','']]>
+	</queryString>
+	<field name="Code" class="java.lang.String"/>
+	<field name="Name" class="java.lang.String"/>
+	<field name="UnitCode" class="java.lang.String"/>
+	<field name="AssetsType" class="java.lang.String"/>
+	<field name="DepartCode" class="java.lang.String"/>
+	<field name="LocateCode" class="java.lang.String"/>
+	<field name="BuyDate" class="java.sql.Timestamp"/>
+	<field name="BuyPrice" class="java.math.BigDecimal"/>
+	<field name="BuyForm" class="java.lang.String"/>
+	<field name="Remain" class="java.math.BigDecimal"/>
+	<field name="BrandCode" class="java.lang.String"/>
+	<field name="ModelCode" class="java.lang.String"/>
+	<field name="MachineID" class="java.lang.String"/>
+	<field name="MotorID" class="java.lang.String"/>
+	<field name="PowerSpeed" class="java.lang.String"/>
+	<field name="CarLicense" class="java.lang.String"/>
+	<field name="RentPerMonth" class="java.math.BigDecimal"/>
+	<field name="OwnerName" class="java.lang.String"/>
+	<field name="KeeperName" class="java.lang.String"/>
+	<field name="DepartName" class="java.lang.String"/>
+	<field name="LocateName" class="java.lang.String"/>
+	<field name="TypeName" class="java.lang.String"/>
+	<group name="LocateCode">
+		<groupExpression><![CDATA[$F{LocateCode}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<rectangle>
+					<reportElement x="6" y="2" width="791" height="16" backcolor="#FFCCFF"/>
+				</rectangle>
+				<textField>
+					<reportElement x="200" y="2" width="542" height="15"/>
+					<textElement>
+						<font fontName="SansSerif" size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{LocateName}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="127" y="2" width="73" height="15"/>
+					<textElement>
+						<font fontName="SansSerif" size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{LocateCode}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="46" y="2" width="78" height="15"/>
+					<textElement>
+						<font fontName="SansSerif" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[ที่ตั้ง :]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="19">
+				<rectangle>
+					<reportElement x="6" y="1" width="791" height="16" backcolor="#CCFFFF"/>
+				</rectangle>
+				<textField>
+					<reportElement x="693" y="3" width="100" height="15"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression class="java.lang.Integer"><![CDATA[$V{LocateCode_COUNT}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="622" y="3" width="71" height="15"/>
+					<textElement textAlignment="Right">
+						<font fontName="SansSerif" size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[รวมตามที่ตั้ง :]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="4" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="54" splitType="Stretch">
+			<staticText>
+				<reportElement x="216" y="0" width="581" height="20"/>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[รายงาน รายการสินทรัพย์ แยกตามช่วง ที่ตั้ง]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="693" y="34" width="100" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="22" splitType="Stretch">
+			<rectangle>
+				<reportElement x="6" y="4" width="791" height="16" backcolor="#0099FF"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="46" y="4" width="78" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[รหัสสินทรัพย์]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="4" width="37" height="15"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ลำดับ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="126" y="4" width="258" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[รหัสสินทรัพย์]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="395" y="5" width="48" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ยี่ห้อ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="453" y="4" width="72" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[หมายเลขเครื่อง]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="534" y="4" width="80" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[หมายเลขตัวถัง]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="622" y="5" width="86" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[เจ้าของ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="715" y="5" width="78" height="15"/>
+				<textElement textAlignment="Right">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ค่าเช่า/เดือน]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="40" splitType="Stretch">
+			<ellipse>
+				<reportElement x="18" y="1" width="16" height="16" backcolor="#FF6666"/>
+			</ellipse>
+			<textField>
+				<reportElement x="127" y="4" width="257" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{Name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="395" y="4" width="48" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{BrandCode}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="453" y="4" width="72" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{MachineID}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="534" y="4" width="80" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{MotorID}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00">
+				<reportElement x="715" y="4" width="78" height="15"/>
+				<textElement textAlignment="Right">
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{RentPerMonth}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="622" y="4" width="86" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{OwnerName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="6" y="4" width="40" height="15"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="6" y="38" width="791" height="1"/>
+				<graphicElement>
+					<pen lineStyle="Dotted"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="47" y="21" width="74" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[วันที่ซื้อ :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="395" y="21" width="48" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ซื้อจาก :]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="127" y="21" width="97" height="15"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.sql.Timestamp"><![CDATA[$F{BuyDate}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;-#,##0.00">
+				<reportElement x="248" y="21" width="136" height="15"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{BuyPrice}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="453" y="21" width="161" height="15"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{BuyForm}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="200" y="21" width="58" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ราคาที่ซื้อ :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="622" y="21" width="48" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[แผนก :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="659" y="21" width="134" height="15"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{DepartName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="46" y="4" width="78" height="15"/>
+				<textElement>
+					<font fontName="SansSerif" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{Code}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="2" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="4" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="20" splitType="Stretch">
+			<rectangle>
+				<reportElement x="6" y="2" width="791" height="16" backcolor="#CCFFFF"/>
+			</rectangle>
+			<textField>
+				<reportElement x="693" y="3" width="100" height="15"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="622" y="3" width="71" height="15"/>
+				<textElement textAlignment="Right">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[รวมทั้งหมด :]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>
