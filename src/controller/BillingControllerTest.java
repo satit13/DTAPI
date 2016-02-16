@@ -38,10 +38,16 @@ public class BillingControllerTest {
 		
 		IV_Reqs_PrintSlipBean evt2;
 		
-		evt2 = new IV_Reqs_PrintSlipBean();
-		evt2.setType(0);
-		evt2.setInvoiceNo("13581119-2339");
-		evt2.setArCode("");
+		//evt2 = new IV_Reqs_PrintSlipBean();
+		//evt2.setType(0);
+		//evt2.setInvoiceNo("13581119-2339");
+		//evt2.setArCode("");
+		
+		double aaa;
+		
+		aaa = 70.00;
+		
+		System.out.println(bc.getDecimalTest(aaa));
 		
 		
 //		evt = new IV_Reqs_CreditCardBean();
@@ -77,9 +83,9 @@ public class BillingControllerTest {
 //		IV_Resp_SearchCreditTypeBean credittype = new IV_Resp_SearchCreditTypeBean();
 		
 		
-		slip = bc.printSlip("POS", evt2);
+		//slip = bc.printSlip("POS", evt2);
 		
-		System.out.println("Bill DocDate : "+slip.getDocDate());
+		//System.out.println("Bill DocDate : "+slip.getDocDate());
 	}
 
 }

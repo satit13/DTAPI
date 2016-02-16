@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -36,6 +37,7 @@ public class getDataFromData {
 	
 	private final QueueConnect ds = QueueConnect.INSTANCE;
 	private final SQLConn sqlDS = SQLConn.INSTANCE;
+	private final QueueConnect dsTK = QueueConnect.INSTANCE;
 
 	private java.text.SimpleDateFormat dtDoc= new java.text.SimpleDateFormat();
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
@@ -61,7 +63,11 @@ public class getDataFromData {
 		try{
 			Statement st = sqlDS.getSqlStatement("POS");
 			
-			vQuery = "select a.itemcode,a.unitcode,rate,barcodename from dbo.bcbarcodemaster a " +
+			vQuery = "select a.itemcode,a.unitcode,rate,b.name1 as barcodename,'-' as expertcode, "+
+					" '-'  as departmentcode,'-'  as departname, "+
+					" '-'  as categorycode,'-'  as category, "+
+					" '-'  as secCode,'-'  as secName,isnull(b.averagecost,0) as averagecost "+
+					" from dbo.bcbarcodemaster a " +
 					" inner join dbo.bcitem  b on a.itemcode = b.code " +
 					" inner join dbo.bcstkpacking c on a.itemcode = c.itemcode and a.unitcode = c.unitcode " +
 					" where barcode = '"+barcode+"'";
@@ -73,6 +79,14 @@ public class getDataFromData {
 				resItem.setRate1(rs.getInt("rate"));
 				resItem.setUnitCode(rs.getString("unitcode"));
 				resItem.setItemName(rs.getString("barcodename"));
+				resItem.setExpertCode(rs.getString("expertcode"));
+				resItem.setDepartmentCode(rs.getString("departmentcode"));
+				resItem.setDepartmentName(rs.getString("departname"));
+				resItem.setCategoryCode(rs.getString("categorycode"));
+				resItem.setCategoryName(rs.getString("category"));
+				resItem.setSecCode(rs.getString("secCode"));
+				resItem.setSecName(rs.getString("secName"));
+				resItem.setAverageCost(rs.getDouble("averagecost"));
 			}
 		    rs.close();
 		    st.close();
@@ -95,13 +109,15 @@ public class getDataFromData {
 		try{
 			Statement st = ds.getStatement("SmartQ");
 			
-			vQuery = "select docno,iscancel,status from Queue where qId = "+qId +" and docdate = '"+dateFormat.format(dateNow)+"' limit 1";
+			vQuery = "select docno,iscancel,status,carLicence,salecode from Queue where qId = "+qId +" and docdate = '"+dateFormat.format(dateNow)+"' limit 1";
 			System.out.println("GetDocno :"+vQuery);
 			ResultSet rs = st.executeQuery(vQuery);
 			while(rs.next()){
 				resQue.setDocNo(rs.getString("docno"));
 				resQue.setIsCancel(rs.getInt("iscancel"));
 				resQue.setStatus(rs.getInt("status"));
+				resQue.setCarLicense(rs.getString("carLicence"));
+				resQue.setSaleCode(rs.getString("saleCode"));
 			}
 		    rs.close();
 		    st.close();
@@ -185,7 +201,7 @@ public class getDataFromData {
 		try{
 			Statement st = ds.getStatement("SmartQ");
 			
-			vQuery = "select a.docno,a.docdate,b.itemcode,b.barcode,c.name1,b.unitCode,b.checkoutQty,b.price,b.rate1,ifnull(b.checkoutAmount,0) as checkoutAmount from Queue a inner join QItem b on a.qid = b.qid and a.docno = b.docno inner join Item c on b.itemcode = c.code  where a.qId = "+qId +" and a.docdate = '"+dateFormat.format(dateNow)+"' and a.iscancel = 0 and b.iscancel = 0 and b.isCheckOut = 1 ";
+			vQuery = "select a.docno,a.docdate,b.itemcode,b.barcode,b.itemName as name1,b.unitCode,b.checkoutQty,b.price,b.rate1,ifnull(b.averageCost,0) as averagecost,ifnull(b.checkoutAmount,0) as checkoutAmount,b.salecode from Queue a inner join QItem b on a.qid = b.qid and a.docno = b.docno where a.qId = "+qId +" and a.docdate = '"+dateFormat.format(dateNow)+"' and a.iscancel = 0 and b.iscancel = 0 and b.isCheckOut = 1 ";
 			System.out.println("GetDocno :"+vQuery);
 			ResultSet rs = st.executeQuery(vQuery);
 			
@@ -202,7 +218,8 @@ public class getDataFromData {
 				evt.setPrice(rs.getDouble("price"));
 				evt.setUnitCode(rs.getString("unitcode"));
 				evt.setPackingRate1(rs.getInt("rate1"));
-				
+				evt.setSaleCode(rs.getString("saleCode"));
+				evt.setSumOfCost(rs.getDouble("averagecost"));
 				itemlist.add(evt);
 			}	
 		    rs.close();
@@ -225,7 +242,7 @@ public class getDataFromData {
 			Statement st = ds.getStatement("SmartConfig");
 			
 		    vQuery="select u.code,u.role from  User as u inner join UserAccess as ua on u.code=ua.userCode and ua.userUUID='"+accessToken+"'"
-		    		+" where u.role=1 order by ua.dateTimeStamp DESC LIMIT 1" ;
+		    		+" order by ua.dateTimeStamp DESC LIMIT 1" ;
 		    
 			ResultSet rs = st.executeQuery(vQuery);
 			while(rs.next()){
@@ -356,7 +373,7 @@ public class getDataFromData {
 									try{
 										Statement st = sqlDS.getSqlStatement("POS");
 										
-										vQuery = "set dateformat dmy select count(CreditCardNo) as vCount from dbo.bccreditcard_test where CreditCardNo = '"+crdCard.get(x).getCardNo()+"' and ConfirmNo = '"+crdCard.get(x).getConfirmNo()+"'";
+										vQuery = "set dateformat dmy select count(ConfirmNo) as vCount from dbo.bccreditcard where CreditCardNo = '"+crdCard.get(x).getCardNo()+"' and ConfirmNo = '"+crdCard.get(x).getConfirmNo()+"'";
 										ResultSet rs = st.executeQuery(vQuery);
 										
 										System.out.println("Verify Coupong :"+vQuery);
@@ -433,7 +450,7 @@ public class getDataFromData {
 					if (coupong.get(y).getAmount()!= 0){
 						try{
 							Statement st = sqlDS.getSqlStatement("POS");
-							vQuery = "set dateformat dmy select count(code) as vCount from dbo.bccoupon_test where code = '"+coupong.get(y).getCouponCode()+"' and couponval = "+coupong.get(y).getAmount()+"and code not in (select couponcode from dbo.bccouponreceive_test where docno in (select docno from dbo.bcarinvoice_test where iscancel = 0)) and cast(rtrim(day(getdate()))+'/'+rtrim(month(getdate()))+'/'+rtrim(year(getdate())) as datetime) <= expiredate";
+							vQuery = "set dateformat dmy select count(code) as vCount from dbo.bccoupon where code = '"+coupong.get(y).getCouponCode()+"' and couponval = "+coupong.get(y).getAmount()+"and code not in (select couponcode from dbo.bccouponreceive where docno in (select docno from dbo.bcarinvoice where iscancel = 0)) and cast(rtrim(day(getdate()))+'/'+rtrim(month(getdate()))+'/'+rtrim(year(getdate())) as datetime) <= expiredate";
 							ResultSet rs = st.executeQuery(vQuery);
 							
 							System.out.println("Verify Coupong :"+vQuery);
@@ -512,5 +529,47 @@ public class getDataFromData {
 		return point;
 	}
 	
+	
+	public int CheckAccessToken(String accessToken){
+		int access=0;
+		
+		
+		try {
+			Statement stmtTK = dsTK.getStatement("SmartConfig");
+			
+			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ accessToken +"'";
+			System.out.println("vCountToken : "+vQuery);
+			ResultSet rsTK = stmtTK.executeQuery(vQuery);
+			while (rsTK.next()) {
+				access = 2;//rs.getInt("vCount");
+			}
+			rsTK.close();
+			stmtTK.close();
+			
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+		}finally{
+			dsTK.close();
+		}
+		
+		 return access;
+	}
+	
+	
+//	public String UserMoveFile(String userCode)
+//	{	
+//	    File file = new File("filename");
+//	    
+//	    // Destination directory
+//	    File dir = new File("directoryname");
+//	    
+//	    // Move file to new directory
+//	    boolean success = file.renameTo(new File(dir, file.getName()));
+//	    if (!success) {
+//	        // File was not successfully moved
+//	    }
+//    
+//	}
 }
+	
 

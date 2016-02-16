@@ -6,6 +6,7 @@ public class PK_Reqs_EditOrderBean {
 	private String carBrand;
 	private int qId;
 	private int status;
+	private String saleCode;
 	
 	
 	public PK_Reqs_EditOrderBean() {
@@ -13,12 +14,13 @@ public class PK_Reqs_EditOrderBean {
 	}
 
 
-	public PK_Reqs_EditOrderBean(String accessToken, String carNumber, String carBrand,int qId,int status) {
+	public PK_Reqs_EditOrderBean(String accessToken, String carNumber, String carBrand,int qId,int status, String saleCode) {
 		this.accessToken = accessToken;
 		this.carNumber = carNumber;
 		this.carBrand = carBrand;
 		this.qId = qId;
 		this.status = status;
+		this.saleCode = saleCode;
 	}
 
 	public String getAccessToken() {
@@ -67,6 +69,14 @@ public class PK_Reqs_EditOrderBean {
 
 	public void setStatus(int status) {
 		this.status = status;
+	}
+	
+	public String getSaleCode(){
+		return saleCode;
+	}
+	
+	public void setSaleCode(String saleCode){
+		this.saleCode = saleCode;
 	}
 
 }

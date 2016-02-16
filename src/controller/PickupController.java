@@ -31,6 +31,8 @@ import bean.UserSearchBean;
 import bean.orderPendingBean;
 import connect.QueueConnect;
 
+import controller.TestInsertPicture;
+
 public class PickupController {
 	private final QueueConnect ds = QueueConnect.INSTANCE;
 	private String Textstring;
@@ -53,6 +55,10 @@ public class PickupController {
 	
 	private java.text.SimpleDateFormat dtDoc= new java.text.SimpleDateFormat();
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
+	
+	getDataFromData getData = new getDataFromData();
+	
+	LoginBean userCode = new LoginBean();
 
 	DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 	//dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
@@ -75,24 +81,24 @@ public class PickupController {
 		this.isSuccessSub = isSuccessSub;
 	}
 	public orderPendingBean searchOrderPending(String dbName,SearchBean keyword){
+		TestInsertPicture p = new TestInsertPicture();
 		dtDoc.applyPattern("yyyy-MM-dd");
 		dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
 		Date dateNow = new Date();
 		
 		int vCountToken=0;
 		
+		boolean checkPic;
+		
+		
+		//checkPic = p.insertPic();
+		
+		vCountToken = getData.CheckAccessToken(keyword.getAccessToken());
+		
+		System.out.println("Token = "+vCountToken);
+		
 			try {
 					Statement stmt = ds.getStatement(dbName);
-					Statement stmt1 = ds.getStatement("SmartConfig");
-					
-					vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ keyword.getAccessToken() +"'";
-					System.out.println("vCountToken : "+vQuery);
-					ResultSet rs1 = stmt1.executeQuery(vQuery);
-					while (rs1.next()) {
-						vCountToken = 1;//rs1.getInt("vCount");
-					}
-				
-				if (vCountToken>0){
 			    
 					if (keyword.getKeyword().equals("")){
 						Textstring="select * from Queue where docDate = '"+dateFormat.format(dateNow)+"' order by createDate ";
@@ -100,7 +106,7 @@ public class PickupController {
 						Textstring="select * from Queue where docDate = '"+dateFormat.format(dateNow)+"' and (docno like'%"+keyword.getKeyword()+"%' or carLicence like '%"+keyword.getKeyword()+"%') order by createDate";
 					}
 					
-				   	System.out.println(Textstring);
+				   	System.out.println(new Date(System.currentTimeMillis())+" : "+Textstring);
 				    
 				    ResultSet rs = stmt.executeQuery(Textstring);
 				    
@@ -128,16 +134,13 @@ public class PickupController {
 						
 		    		    //System.out.println(order.getCarNumber());
 					}
+					rs.close();
+					stmt.close();
+					
 				   	if (roworder==0) { //ค้นหาไม่พบ
 		    		    order.setOrder(orderList);
 				   	}  
-				}else{
-					order.setOrder(orderList);
-				}
-				
-				rs1.close();
-				stmt1.close();
-				
+			
 			} catch (SQLException e) {
 				e.printStackTrace();
 			} finally {
@@ -150,6 +153,7 @@ public class PickupController {
 	public PK_Resp_NewOrderHeaderBean newOrder(String dbName,CT_Reqs_NewDocNoBean reqOrder){
 		String docDate;
 		String vGenNewDocNo = "";
+		String saleCode = "";
 		boolean success;
 		int qId;
 		int vCountToken=0;
@@ -160,30 +164,6 @@ public class PickupController {
 		
 		CT_Reqs_NewDocNoBean reqNewDocNo = new CT_Reqs_NewDocNoBean();
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqOrder.getAccessToken() +"'";
-			System.out.println("vCountToken : "+vQuery);
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-			
-		    rs1.close();
-		    stmt.close();
-			
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
-		
-		System.out.println("vCountToken : "+vCountToken);
-		
-		if (vCountToken>0){
-
 		vGenNewDocNo = genNo.genDocNo(0);
 		qId = genNo.genqId();
 		
@@ -193,7 +173,9 @@ public class PickupController {
 		
 		if(reqOrder.getCarNumber()!=null && reqOrder.getCarNumber()!=""){
 		
-		vQuery ="insert into Queue(docNo,docDate,status,isCancel,customerId,warehouseId,customerCode,whCode,carLicence,carBrand,creatorCode,createDate,qId) values("+"'"+vGenNewDocNo+"','"+dateFormat.format(dateNow)+"',0,0,'99999',0,'99999','S1-B','"+reqOrder.getCarNumber()+"','"+reqOrder.getCarBrand()+"','admin',CURRENT_TIMESTAMP,"+qId+")";
+		userCode = getData.searchUserAccessToken(reqOrder.getAccessToken());
+		saleCode = userCode.getEmployeeCode();
+		vQuery ="insert into Queue(docNo,docDate,status,isCancel,customerId,warehouseId,customerCode,whCode,carLicence,carBrand,creatorCode,createDate,qId,saleCode) values("+"'"+vGenNewDocNo+"','"+dateFormat.format(dateNow)+"',0,0,'99999',0,'99999','S1-B','"+reqOrder.getCarNumber()+"','"+reqOrder.getCarBrand()+"','"+saleCode+"',CURRENT_TIMESTAMP,"+qId+",'"+saleCode+"'"+")";
 		System.out.println(vQuery); 
 		try {
 				isSuccess= excecute.execute(dbName,vQuery);
@@ -220,13 +202,6 @@ public class PickupController {
 			qIdOrder.setqId(0);
 			qIdOrder.setResponse(response);
 		}
-		}else{
-			response.setIsSuccess(false);
-			response.setProcess("newPickup");
-			response.setProcessDesc("Error : Access is deny !!!!!");
-			qIdOrder.setqId(0);
-			qIdOrder.setResponse(response);
-		}
 		return qIdOrder;
 	}
 	
@@ -235,34 +210,39 @@ public class PickupController {
 		PK_Resp_GetDataQueue getQueue = new PK_Resp_GetDataQueue();
 		getDataFromData getData = new getDataFromData();
 		
+		dtDoc.applyPattern("yyyy-MM-dd");
+		dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
+		Date dateNow = new Date();
+		
+		
 		getQueue = getData.searchQueue(reqEdit.getqId());
 		int vCountToken =0;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqEdit.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-		    rs1.close();
-		    stmt.close();
-		    
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
+		String saleCode="";
 		
-		if (vCountToken > 0){
+		
 		if (reqEdit.getCarNumber()!=null && reqEdit.getCarNumber()!=""){
 			if(getQueue.getIsCancel()==0){
 				
 				if(getQueue.getStatus()!=3){
+					
+					userCode = getData.searchUserAccessToken(reqEdit.getAccessToken());
+					
+					System.out.println("รหัสพนักงานคือ "+reqEdit.getSaleCode());
+					
+					if (reqEdit.getSaleCode()=="" || reqEdit.getSaleCode() == null){
+						saleCode = userCode.getEmployeeCode();
+						
+						vQuery ="update Queue set status = "+reqEdit.getStatus()+",carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+					}else{
+						saleCode = reqEdit.getSaleCode();
+						
+						vQuery ="update Queue set status = "+reqEdit.getStatus()+",saleCode = '"+saleCode+"',carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+					}
+					
+					System.out.println("รหัสพนักงานใหม่คือ "+saleCode);
 
-					vQuery ="update Queue set status ="+reqEdit.getStatus()+" ,carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='admin',editDate = CURRENT_TIMESTAMP where qid ="+reqEdit.getqId();
+					//vQuery ="update Queue set status = "+reqEdit.getStatus()+",saleCode = '"+saleCode+"',carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
 					System.out.println(vQuery); 
 					try {
 							isSuccess= excecute.execute(dbName,vQuery);
@@ -304,13 +284,6 @@ public class PickupController {
 				editOrder.setResponse(response);
 			}
 		
-		}else{
-			isSuccess=false;
-			response.setIsSuccess(false);
-			response.setProcess("editPickup");
-			response.setProcessDesc("Error : Access is deny !!!!!");
-			editOrder.setResponse(response);
-		}
 		
 		return editOrder;
 	}
@@ -325,39 +298,27 @@ public class PickupController {
 		Date dateNow = new Date();
 		int vCountToken=0;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ delOrder.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-			
-		    rs1.close();
-		    stmt.close();
-			
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
+		String saleCode = "";
 		
-		if (vCountToken>0){
+		
 		if (delOrder.getqId() != 0){
 			
 			getQueue = getData.searchQueue(delOrder.getqId());
 			
 			if (getQueue.getIsCancel()==0){
 				
-				if(getQueue.getStatus()==0){
-					vQuery ="update Queue set isCancel = 1,cancelCode='admin',cancelDate = CURRENT_TIMESTAMP where  docDate ='"+dateFormat.format(dateNow)+"' and status <> 3 and qid ="+delOrder.getqId();
-					System.out.println(vQuery); 
+				if(getQueue.getStatus() < 3 ){
+					
+					userCode = getData.searchUserAccessToken(delOrder.getAccessToken());
+					saleCode = userCode.getEmployeeCode();
+					
+					//System.out.println("moooooooooooooooooooooooooooooooooooooooooooooooooo");
+					vQuery ="update Queue set isCancel = 1,cancelCode='"+ saleCode+"',cancelDate = CURRENT_TIMESTAMP where  docDate ='"+dateFormat.format(dateNow)+"' and status <> 3 and qid ="+delOrder.getqId();
+					System.out.println("Delete :"+vQuery); 
 					try {
 							isSuccess= excecute.execute(dbName,vQuery);
 							
-							vQuerySub ="update QItem set isCancel = 1,cancelCode='admin',cancelDate = CURRENT_TIMESTAMP where docDate ='"+dateFormat.format(dateNow)+"' and isCheckOut = 0 and qid ="+delOrder.getqId();
+							vQuerySub ="update QItem set isCancel = 1,cancelCode='"+saleCode+"',cancelDate = CURRENT_TIMESTAMP where docDate ='"+dateFormat.format(dateNow)+"' and isCheckOut = 0 and qid ="+delOrder.getqId();
 							isSuccess= excecute.execute(dbName,vQuerySub);
 							
 							response.setIsSuccess(true);
@@ -397,14 +358,8 @@ public class PickupController {
 				response.setProcessDesc("Error : No Have Queue ID");
 				editOrder.setResponse(response);
 			}
-		}else{
-			isSuccess=false;
-			response.setIsSuccess(false);
-			response.setProcess("delPickup");
-			response.setProcessDesc("Error : Access is deny !!!!!");
-			editOrder.setResponse(response);
-		}
 		
+		System.out.println("Update :"+response.getProcessDesc()+" this que is "+getQueue.getStatus());
 		return editOrder;
 	}
 	
@@ -414,36 +369,20 @@ public class PickupController {
 		PK_Resp_GetItemBarcodeBean getBarData = new PK_Resp_GetItemBarcodeBean();
 		PK_Resp_GetDataQueue getQueue = new PK_Resp_GetDataQueue();
 		PK_Resp_ManageItemListBean itemList = new PK_Resp_ManageItemListBean();
+		
 		LoginBean userCode = new LoginBean();
 		int vCheckExistItem=0;
 		double itemPrice=0.0;
 		double itemAmount=0.0;
 		String vQuerySub;
+		String saleCode="";
 		
 		dtDoc.applyPattern("yyyy-MM-dd");
 		dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
 		Date dateNow = new Date();
 		int vCountToken = 0 ;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqItem.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-		    rs1.close();
-		    stmt.close();
-		    
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
 		
-		if (vCountToken>0){
 		if (reqItem.getqId()!=0){
 			if (reqItem.getBarCode()!=null && reqItem.getBarCode()!=""){
 				System.out.println("1");
@@ -458,19 +397,30 @@ public class PickupController {
 							userCode = getData.searchUserAccessToken(reqItem.getAccessToken());
 							vCheckExistItem = getData.checkItemExistQueue(reqItem);
 							itemPrice = getData.searchItemPrice(getBarData.getCode(),reqItem.getBarCode(), getBarData.getUnitCode());
-
+							
+							if (reqItem.getSaleCode() == "" || reqItem.getSaleCode() == null) {
+								saleCode = userCode.getEmployeeCode();
+							}else{
+								saleCode = reqItem.getSaleCode();
+							}
+							
 							itemAmount = itemPrice*reqItem.getQtyBefore();
+							
+							System.out.println("ItemPrice : "+itemPrice);
+							
+							System.out.println("ItemAmount : "+itemAmount);
+							
 							
 							if (getBarData.getCode()!=null && getBarData.getCode()!=""){
 
 							if (vCheckExistItem==0){
-								vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,unitCode,barCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,rate1,pickerCode,pickDate,isCancel,lineNumber) "+ "values("
-									+reqItem.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+getBarData.getUnitCode()+"','"+reqItem.getBarCode()+"',"+ reqItem.getQtyBefore()+","+reqItem.getQtyBefore()+",0,0,"+itemPrice+","+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqItem.getIsCancel()+",0)";
+								vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,unitCode,barCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,rate1,pickerCode,pickDate,isCancel,lineNumber,saleCode,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
+									+reqItem.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+getBarData.getUnitCode()+"','"+reqItem.getBarCode()+"',"+ reqItem.getQtyBefore()+","+reqItem.getQtyBefore()+",0,0,"+itemPrice+","+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqItem.getIsCancel()+",0,'"+saleCode+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
 							}else{
 								if(reqItem.getIsCancel()==0 && reqItem.getQtyBefore()!= 0){
 									vQuery = "update QItem set qty ="+reqItem.getQtyBefore()+",pickQty="+reqItem.getQtyBefore()+",price ="+itemPrice+",itemAmount="+itemAmount+",isCancel=0 where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}else{
-									vQuery = "update QItem set qty=0,pickQty = 0,itemAmount=0,isCancel=1,cancelCode='admin',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
+									vQuery = "update QItem set qty=0,pickQty = 0,itemAmount=0,isCancel=1,cancelCode='"+saleCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}
 								
 								System.out.println("Update Cancel :"+vQuery);
@@ -486,7 +436,7 @@ public class PickupController {
 								
 								itemList.setBarCode(reqItem.getBarCode());
 								itemList.setFilePath("");
-								itemList.setItemCategory("");
+								itemList.setItemCategory(getBarData.getCategoryCode());
 								itemList.setItemCode(getBarData.getCode());
 								itemList.setItemName(getBarData.getItemName());
 								itemList.setItemPrice(itemPrice);
@@ -562,17 +512,6 @@ public class PickupController {
 			respItem.setResponse(response);
 		}
 		
-		}else{
-			isSuccess=false;
-			response.setIsSuccess(false);
-			response.setProcess("insertItemPickup");
-			response.setProcessDesc("Error : Access is deny !!!!!");
-
-			respItem.setItem(itemList);
-			respItem.setResponse(response);
-		}
-			
-		
 		return respItem;
 		
 	}
@@ -588,9 +527,9 @@ public class PickupController {
 			PK_Resp_CarBrandBean evt1;
 			
 			if (search.getKeyword()== null || search.getKeyword()==""){
-				vQuery = "select distinct carbrand from Queue order by carBrand";
+				vQuery = "select distinct carbrand from CarBrand order by carBrand";
 			}else{
-				vQuery = "select distinct carbrand from Queue  where carBrand like '%"+search.getKeyword()+"%'order by carBrand";
+				vQuery = "select distinct carbrand from CarBrand  where carBrand like '%"+search.getKeyword()+"%'order by carBrand";
 			}
 			System.out.println(vQuery);
 			ResultSet rs = stmt.executeQuery(vQuery);

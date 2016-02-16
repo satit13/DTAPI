@@ -145,7 +145,7 @@ public class GenNewDocnoController {
 		try{
 			Statement st = dsSql.getSqlStatement("POS");
 			
-			vQuery = "select right(MAX(docno),4) as maxno from dbo.BCARINVOICE_Test where DocNo like '"+MachineNo+"%'";
+			vQuery = "select right(MAX(docno),4) as maxno from dbo.BCARINVOICE where DocNo like '"+MachineNo+"%'";
 			System.out.println("Search MaxNo :"+vQuery);
 			ResultSet rs = st.executeQuery(vQuery);
 			while(rs.next()){

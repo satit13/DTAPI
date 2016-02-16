@@ -14,9 +14,11 @@ import controller.getDataFromData;
 import bean.CT_Resp_ResponseBean;
 import bean.IV_Reqs_BillingBean;
 import bean.IV_Reqs_CouponBean;
+import bean.IV_Reqs_InvoiceDataBean;
 import bean.IV_Reqs_PrintSlipBean;
 import bean.IV_Reqs_VerifyCouponBean;
 import bean.IV_Resp_BillingBean;
+import bean.IV_Resp_InvoiceDataBean;
 import bean.IV_Resp_PrintSlipBean;
 import bean.IV_Resp_SearchBankBean;
 import bean.IV_Resp_SearchCreditTypeBean;
@@ -91,5 +93,18 @@ public class Billing {
 		printslip = bcl.printSlip("POS", req);
 		
 		return printslip;
+	}
+	
+	@POST
+	@Path("/invoice")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public IV_Resp_InvoiceDataBean invoiceData(IV_Reqs_InvoiceDataBean reqs){
+		IV_Resp_InvoiceDataBean invoice = new IV_Resp_InvoiceDataBean();
+		BillingController bcl = new BillingController();
+		
+		invoice = bcl.InvoiceDetails("192.168.0.7","bcnp", reqs);
+		
+		return invoice;
 	}
 }

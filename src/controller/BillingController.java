@@ -1,5 +1,6 @@
 package controller;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -8,10 +9,12 @@ import java.util.Date;
 import java.util.List;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
 import connect.QueueConnect;
 import connect.SQLConn;
+import connect.NPSQLConn;
 
 
 import bean.CM_Resp_MemberListBean;
@@ -19,6 +22,7 @@ import bean.CT_Resp_ResponseBean;
 import bean.IV_Reqs_BillingBean;
 import bean.IV_Reqs_CouponBean;
 import bean.IV_Reqs_CreditCardBean;
+import bean.IV_Reqs_InvoiceDataBean;
 import bean.IV_Reqs_PrintSlipBean;
 import bean.IV_Reqs_VerifyCouponBean;
 import bean.IV_Resp_ARInvoiceBean;
@@ -28,6 +32,7 @@ import bean.IV_Resp_BillingBean;
 import bean.IV_Resp_CouponAmount;
 import bean.IV_Resp_CreditTypeBean;
 import bean.IV_Resp_InUpBillingBean;
+import bean.IV_Resp_InvoiceDataBean;
 import bean.IV_Resp_PrintSlipBean;
 import bean.IV_Resp_PrintSlipSubBean;
 import bean.IV_Resp_SearchBankBean;
@@ -65,6 +70,7 @@ public class BillingController {
 	
 	IV_Resp_PrintSlipBean printInv = new IV_Resp_PrintSlipBean();
 	List<IV_Resp_PrintSlipSubBean> listInv = new ArrayList<IV_Resp_PrintSlipSubBean>();
+	IV_Resp_InvoiceDataBean invoice = new IV_Resp_InvoiceDataBean();
 	
 	ExcecuteController excecute = new  ExcecuteController();
 	SQLExecController sqlexec = new SQLExecController();
@@ -73,6 +79,7 @@ public class BillingController {
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
 
 	DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+	DecimalFormat numfm = new DecimalFormat("#,##0.00");
 	
 	public String vQuery,vQuerySub,vQueryCreditCard,vQueryCoupong;
 	String vPosNo;
@@ -82,6 +89,7 @@ public class BillingController {
 	
 	private SQLConn sqlDS = SQLConn.INSTANCE;
 	private QueueConnect ds = QueueConnect.INSTANCE;
+	private NPSQLConn sqlNP = NPSQLConn.INSTANCE;
 	
 	double checkSumCreditAmount=0;
 	double checkSumCouponAmount=0;
@@ -116,25 +124,6 @@ public class BillingController {
 		
 		int vCountToken = 0;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqsBill.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-		    rs1.close();
-		    stmt.close();
-		    
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
-		
-		if (vCountToken>0) {
 		
 		if (qIdStatus.getStatus()==2){
 		
@@ -370,8 +359,23 @@ public class BillingController {
 				
 				System.out.println(checkRemainAmount);
 				
-				beforeTaxAmount = (totalAmount*100)/107;
+				double bfTaxAmount;
+				
+				bfTaxAmount = (totalAmount*100)/107;
+
+//				BigDecimal aa = new BigDecimal(a);
+//				BigDecimal bb;
+//				bb= aa.setScale(2,BigDecimal.ROUND_HALF_UP);
+//				System.out.println("divideA = "+bb);
+//				System.out.println("Result = "+numfm.format(bb));
+				
+				BigDecimal newBeforeTaxAmount = new BigDecimal(bfTaxAmount);
+				BigDecimal changBFAmount;
+				changBFAmount = newBeforeTaxAmount.setScale(2, BigDecimal.ROUND_HALF_UP);
+				beforeTaxAmount = changBFAmount.doubleValue();
+				
 				taxAmount = totalAmount-beforeTaxAmount;
+				
 				
 				System.out.println("save ok"+validateCreditCard.getIsSuccess());
 				
@@ -410,8 +414,8 @@ public class BillingController {
 							header.setTaxType(1);
 							header.setArAddress(ar.getArAddress());
 							header.setCashierCode(userCode.getEmployeeCode());
-							header.setMachineNo("");
-							header.setMachineCode("");
+							header.setMachineNo("13");
+							header.setMachineCode("50011-91-00547");
 							header.setPosStatus(1);
 							header.setCreditType(crdCard.get(0).getCreditType());
 							header.setCreditNo(crdCard.get(0).getCardNo());
@@ -425,7 +429,7 @@ public class BillingController {
 							header.setDepartCode("S01-00-00");
 							header.setCreditDay(0);
 							header.setDueDate("");
-							header.setSaleCode(userCode.getEmployeeCode());
+							header.setSaleCode(data.searchQueue(reqsBill.getqId()).getSaleCode());
 							header.setTaxRate(7);
 							header.setIsConfirm(0);
 							header.setMyDescription("DriveThru");
@@ -467,7 +471,7 @@ public class BillingController {
 							header.setProjectCode("");
 							header.setIsConditionSend(0);
 							header.setPayBillAmount(0);
-							header.setSoRefNo("");
+							header.setSoRefNo(data.searchQueue(reqsBill.getqId()).getCarLicense());
 							header.setShiftCode("กลางวัน");
 
 							
@@ -506,6 +510,8 @@ public class BillingController {
 									listInv.setAmount(itemAmount);
 									listInv.setNetAmount(netAmount);
 									listInv.setHomeAmount(netAmount);
+									listInv.setSumOfCost(data.searchQueueCheckOutItem(reqsBill.getqId()).get(m).getSumOfCost());
+									listInv.setSaleCode(data.searchQueueCheckOutItem(reqsBill.getqId()).get(m).getSaleCode());
 									sub.add(listInv);
 								}
 							}
@@ -513,7 +519,7 @@ public class BillingController {
 							bill.setBillHeader(header);
 							bill.setBillSub(sub);
 							
-							vQuery = "set dateformat ymd  insert into dbo.BCARInvoice_Test(docNo,docDate,taxNo,taxType,arCode,arName,arAddress,cashierCode,"
+							vQuery = "set dateformat ymd  insert into dbo.BCARInvoice(docNo,docDate,taxNo,taxType,arCode,arName,arAddress,cashierCode,"
 							+"machineNo,machineCode,posStatus,billTime,creditType,creditNo,cofirmNo,chargeWord,creditBaseAmount,"
 							+"chargeAmount,grandTotal,coupongAmount,changeAmount,departCode,creditDay,dueDate,saleCode,taxRate,"
 							+"isConfirm,myDescription,billType,billGroup,refDocNo,sumOfItemAmount,discountWord,discountAmount,"
@@ -554,7 +560,7 @@ public class BillingController {
 							
 							for(int i=0;i<sub.size();i++){
 								
-								vQuerySub=	"set dateformat ymd  insert into dbo.BCARInvoiceSub_Test(docNo,taxNo,taxType,itemCode,docDate,arCode,departCode,"
+								vQuerySub=	"set dateformat ymd  insert into dbo.BCARInvoiceSub(docNo,taxNo,taxType,itemCode,docDate,arCode,departCode,"
 											+"saleCode,myDescription,itemName,whCode,shelfCode,cnQty,qty,price,discountWord,"
 											+"discountAmount,amount,netAmount,homeAmount,sumOfCost,balanceAmount,unitCode,"
 											+"soRefNo,poRefNo,stockType,lineNumber,refLineNumber,isCancel,allocateCode,projectCode,"
@@ -562,7 +568,7 @@ public class BillingController {
 											"isConditionSend,taxRate,packingRate1) "
 								+" values( '"+bill.getBillHeader().getDocNo()+"','"+bill.getBillHeader().getTaxNo()+"',"+bill.getBillHeader().getTaxType()+","
 								+" '"+bill.getBillSub().get(i).getItemCode()+"','"+bill.getBillHeader().getDocDate()+"','"+bill.getBillHeader().getArCode()+"',"
-								+" '"+bill.getBillHeader().getDepartCode()+"','"+bill.getBillHeader().getSaleCode()+"','"+bill.getBillSub().get(i).getMyDescription()+"',"
+								+" '"+bill.getBillHeader().getDepartCode()+"','"+bill.getBillSub().get(i).getSaleCode()+"','"+bill.getBillSub().get(i).getMyDescription()+"',"
 								+" '"+bill.getBillSub().get(i).getItemName()+"','"+bill.getBillSub().get(i).getWhCode()+"','"+bill.getBillSub().get(i).getShelfCode()+"',"
 								+" "+bill.getBillSub().get(i).getQty()+","+bill.getBillSub().get(i).getQty()+","+bill.getBillSub().get(i).getPrice()+","
 								+" '"+bill.getBillSub().get(i).getDiscountWord()+"',"+bill.getBillSub().get(i).getDiscountAmount()+","+bill.getBillSub().get(i).getAmount()+","
@@ -583,7 +589,7 @@ public class BillingController {
 							if(crdCard.size()!=0 && crdCard.get(0).getCardNo()!=""){
 								for(int a=0;a<crdCard.size();a++){
 								
-									vQueryCreditCard = "set dateformat ymd insert into dbo.BCCreditCard_Test(BankCode,CreditCardNo,DocNo,ArCode,ReceiveDate,DueDate,Status,SaveFrom,Amount,MyDescription,ExchangeRate,CreditType,ConfirmNo,ChargeAmount,CreatorCode,CreateDateTime) values( "
+									vQueryCreditCard = "set dateformat ymd insert into dbo.BCCreditCard(BankCode,CreditCardNo,DocNo,ArCode,ReceiveDate,DueDate,Status,SaveFrom,Amount,MyDescription,ExchangeRate,CreditType,ConfirmNo,ChargeAmount,CreatorCode,CreateDateTime) values( "
 									+" '"+crdCard.get(a).getBankCode()+"','"+crdCard.get(a).getCardNo()+"','"+bill.getBillHeader().getDocNo()+"','"+bill.getBillHeader().getArCode()+"',"
 									+" '"+bill.getBillHeader().getDocDate()+"','"+bill.getBillHeader().getDocDate()+"',"+"0,1"+","+crdCard.get(a).getAmount()+",'"+"ขายหน้าร้าน"+"',"
 									+" "+"1.0000000000"+",'"+crdCard.get(a).getCreditType()+"','"+crdCard.get(a).getConfirmNo()+"',"+crdCard.get(a).getChargeAmount()+",'"+userCode.getEmployeeCode()+"',getdate()"
@@ -595,7 +601,7 @@ public class BillingController {
 						
 							if(listCoupong.size()!=0 && listCoupong.get(0).getCouponCode()!= ""){
 								for(int b=0;b<listCoupong.size();b++){
-									vQueryCoupong="set dateformat ymd insert into dbo.bccouponreceive_Test(COUPONCODE,COUPONTYPE,COUPONNO,TOCOUPONNO,COUPONCOUNT,DOCNO,BOOK,COUPONVAL,LINENUMBER,CREATORCODE,CREATEDATETIME) values( "
+									vQueryCoupong="set dateformat ymd insert into dbo.bccouponreceive(COUPONCODE,COUPONTYPE,COUPONNO,TOCOUPONNO,COUPONCOUNT,DOCNO,BOOK,COUPONVAL,LINENUMBER,CREATORCODE,CREATEDATETIME) values( "
 									+" '"+listCoupong.get(b).getCouponCode()+"',1,'"+listCoupong.get(b).getCouponCode()+"','"+listCoupong.get(b).getCouponCode()+"',1,'"+bill.getBillHeader().getDocNo()+"',"
 									+" '"+listCoupong.get(b).getCouponCode()+"',"+listCoupong.get(b).getAmount()+","+b+",'"+userCode.getEmployeeCode()+"',getdate()"
 									+" )";
@@ -604,7 +610,7 @@ public class BillingController {
 								}
 							}
 							
-							vQuery="update Queue set status = 3 where docNo ='"+que.getDocNo()+"'";
+							vQuery="update Queue set status = 3,invoiceNo = '"+bill.getBillHeader().getDocNo()+"' where docNo ='"+que.getDocNo()+"'";
 							isSuccess= excecute.execute("SmartQ",vQuery);
 							
 							respBill.setInvoiceNo(bill.getBillHeader().getDocNo());
@@ -685,18 +691,6 @@ public class BillingController {
 			respBill.setCreditAmount(0);
 			respBill.setResponse(response);
 		}
-		}else{
-			response.setIsSuccess(false);
-			response.setProcess("Validate Bill Data");
-			response.setProcessDesc("Access is deny !!!!!");
-			respBill.setInvoiceNo("Can not save bill");
-			respBill.setTotalAmount(reqsBill.getDebtAmount());
-			respBill.setCashAmount(reqsBill.getCash());
-			respBill.setChangeAmount(checkChangeAmount);
-			respBill.setCoupongAmount(0);
-			respBill.setCreditAmount(0);
-			respBill.setResponse(response);
-		}
 		System.out.println(respBill.getResponse().getProcessDesc());
 		return respBill;
 	}
@@ -764,9 +758,9 @@ public class BillingController {
 			IV_Resp_CreditTypeBean evt1;
 			
 			if (search.getKeyword()== null || search.getKeyword()==""){
-				vQuery = "select distinct code,name from dbo.BPSCreditType order by code";
+				vQuery = "exec dbo.USP_DT_SearchCreditType ''";
 			}else{
-				vQuery = "select distinct code,name from dbo.BPSCreditType where code like '%"+search.getKeyword()+"%' or name like '%"+search.getKeyword()+"%'order by code";
+				vQuery = "exec dbo.USP_DT_SearchCreditType '"+search.getKeyword()+"'";
 			}
 			System.out.println(vQuery);
 			ResultSet rs = st.executeQuery(vQuery);
@@ -824,7 +818,7 @@ public class BillingController {
 		if (coupong.getCouponCode()!="" && coupong.getCouponCode()!= null){
 				try{
 					Statement st = sqlDS.getSqlStatement(dbName);
-					vQuery = "set dateformat dmy select code,couponval from dbo.bccoupon_test where code = '"+coupong.getCouponCode()+"' and code not in (select couponcode from dbo.bccouponreceive_test where docno in (select docno from dbo.bcarinvoice_test where iscancel = 0)) and cast(rtrim(day(getdate()))+'/'+rtrim(month(getdate()))+'/'+rtrim(year(getdate())) as datetime) <= expiredate";
+					vQuery = "exec dbo.USP_DT_VerifyCoupon '"+coupong.getCouponCode()+"'";
 					ResultSet rs = st.executeQuery(vQuery);
 					
 					System.out.println("Verify Coupong :"+vQuery);
@@ -833,7 +827,7 @@ public class BillingController {
 						coupon.setAmount(rs.getDouble("couponval"));
 					}
 					
-					vQuery = "set dateformat dmy select code,couponval from dbo.bccoupon_test where code = '"+coupong.getCouponCode()+"' and code in (select couponcode from dbo.bccouponreceive_test )";
+					vQuery = "exec dbo.USP_DT_VerifyCoupon '"+coupong.getCouponCode()+"'";
 					ResultSet rs1 = st.executeQuery(vQuery);
 					
 					System.out.println("Verify Coupong :"+vQuery);
@@ -897,26 +891,7 @@ public class BillingController {
 		double pointBal = 0;
 		String pointDesc; 
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ req.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-			
-		    rs1.close();
-		    stmt.close();
-		    
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
 		
-		if (vCountToken>0){
 			
 			pointBal = data.calcPointInvoice(req.getInvoiceNo());
 			
@@ -1004,16 +979,108 @@ public class BillingController {
 			sqlDS.close();
 		}
 		
-		} else{
-			response.setIsSuccess(false);
-			response.setProcess("Search Print Slip");
-			response.setProcessDesc("Error : Access i deny !!!!!");
-			
-			printInv.setItem(listInv);
-			printInv.setResponse(response);
-		}
 		
 		return printInv;
 		
 	}
+	
+	public IV_Resp_InvoiceDataBean InvoiceDetails(String svName,String dbName,IV_Reqs_InvoiceDataBean reqs){
+		Date  billDocDate ;
+		String getBillDate;
+		
+		System.out.println("OK");
+		
+		try {
+			Statement st = sqlNP.getSqlStatement(svName, dbName);
+			
+			vQuery = "exec dbo.USP_NP_InvoiceDetails '"+reqs.getInvoiceNo()+"'";
+			
+			System.out.println(vQuery);
+			ResultSet rs = st.executeQuery(vQuery);
+			
+			listInv.clear();
+			while(rs.next()){
+				System.out.println(reqs.getAccessToken());
+				System.out.println(rs.getString("docno"));
+				
+				billDocDate = rs.getDate("docdate");
+				
+				invoice.setDocNo(rs.getString("docno"));
+				invoice.setDocDate(billDocDate.toString());
+				invoice.setCompanyName("");
+				invoice.setTaxId("");
+				invoice.setPosId("");
+				invoice.setCashierCode(rs.getString("cashiercode"));
+				invoice.setCashierName(rs.getString("cashiername"));
+				invoice.setSaleCode(rs.getString("salecode"));
+				invoice.setSaleName(rs.getString("salename"));
+				invoice.setBillTime("");
+				invoice.setSumOfItemAmount(rs.getDouble("sumofitemamount"));
+				invoice.setBeforeTaxAmount(rs.getDouble("beforeTaxAmount"));
+				invoice.setAfterDiscount(rs.getDouble("afterDiscount"));
+				invoice.setTotalAmount(rs.getDouble("totalamount"));
+				invoice.setTaxRate(rs.getInt("taxrate"));
+				invoice.setTaxAmount(rs.getDouble("taxamount"));
+				invoice.setCashAmount(rs.getDouble("sumcashamount"));
+				invoice.setCreditAmount(rs.getDouble("sumcreditamount"));
+				invoice.setChangeAmount(rs.getDouble("changeamount"));
+				invoice.setArCode(rs.getString("arcode"));
+				invoice.setArName(rs.getString("arname"));
+				
+					IV_Resp_PrintSlipSubBean evt;
+					evt = new IV_Resp_PrintSlipSubBean();
+					evt.setItemCode(rs.getString("itemcode"));
+					evt.setItemName(rs.getString("itemname"));
+					evt.setQty(rs.getInt("qty"));
+					evt.setPrice(rs.getDouble("price"));
+					evt.setAmount(rs.getDouble("amount"));
+					evt.setUnitCode(rs.getString("unitcode"));
+					
+					System.out.println(rs.getString("itemcode"));
+					listInv.add(evt);
+					
+				}
+				response.setIsSuccess(true);
+				response.setProcess("Search Print Slip");
+				response.setProcessDesc("Successfully");
+				invoice.setItem(listInv);
+				invoice.setResponse(response);
+				
+				System.out.println("CashierCode : "+printInv.getCashier());
+		
+			    rs.close();
+			    st.close();
+			
+		} catch (SQLException e) {
+			response.setIsSuccess(false);
+			response.setProcess("Search Print Slip");
+			response.setProcessDesc(e.getMessage());
+			
+			printInv.setItem(listInv);
+			printInv.setResponse(response);
+		}finally{
+			sqlNP.close();
+		}
+		
+		
+		return invoice;
+		
+	}
+	
+	
+	public double getDecimalTest(Double Test){
+		double a,b,c;
+		b= 1912.00;
+		a = (b*100)/107;
+		BigDecimal aa = new BigDecimal(a);
+		BigDecimal bb;
+		bb= aa.setScale(2,BigDecimal.ROUND_HALF_UP);
+		System.out.println("divideA = "+bb.doubleValue());
+		System.out.println("Result = "+numfm.format(bb));
+		
+		c= aa.doubleValue();
+		return c;
+	}
 }
+
+

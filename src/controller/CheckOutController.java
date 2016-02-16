@@ -48,6 +48,8 @@ public class CheckOutController {
 	
 	CK_Resp_ManageItemListBean respItem = new CK_Resp_ManageItemListBean();
 	
+	LoginBean userCode = new LoginBean();
+	
 	private java.text.SimpleDateFormat dtDoc= new java.text.SimpleDateFormat();
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
 
@@ -66,26 +68,6 @@ public class CheckOutController {
 	public CK_Resp_PendingProductListBean searchDataQueue(String dbName,CK_Reqs_GetDataQueue reqQueue){
 		int vCountToken = 0;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqQueue.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-			
-		    rs1.close();
-		    stmt.close();
-		    
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
-		
-		if (vCountToken>0){
 		
 		if (reqQueue.getqId()!=0){
 			allSum = getData.searchQueueSummary(reqQueue.getqId());
@@ -200,15 +182,7 @@ public class CheckOutController {
 			resPending.setResponse(response);
 			resPending.setList(list);	
 		}
-		}else{
-			response.setIsSuccess(false);
-			response.setProcess("QueuePending Details");
-			response.setProcessDesc("Error : "+"Access is deny !!!!!");
-			
-			resPending.setAllSummary(allSum);
-			resPending.setResponse(response);
-			resPending.setList(list);	
-		}
+		
 		return resPending;
 		
 	}
@@ -228,27 +202,10 @@ public class CheckOutController {
 		Date dateNow = new Date();
 		
 		String vQuerySub;
+		String saleCode="";
 		
 		int vCountToken = 0;
 		
-		try {
-			Statement stmt = ds.getStatement("SmartConfig");
-			
-			vQuery = "select count(userUUID) as vCount from UserAccess where userUUID = '"+ reqQueue.getAccessToken() +"'";
-			ResultSet rs1 = stmt.executeQuery(vQuery);
-			while (rs1.next()) {
-				vCountToken = 1;//rs1.getInt("vCount");
-			}
-		    rs1.close();
-		    stmt.close();
-		} catch (SQLException e) {
-			// TODO: handle exception
-			System.out.println(e.getMessage());
-		}finally{
-			ds.close();
-		}
-		
-		if (vCountToken>0){
 		reqItem.setAccessToken(reqQueue.getAccessToken());
 		reqItem.setBarCode(reqQueue.getBarCode());
 		reqItem.setIsCancel(reqQueue.getIsCancel());
@@ -286,17 +243,18 @@ public class CheckOutController {
 							itemPrice = getData.searchItemPrice(getBarData.getCode(),reqQueue.getBarCode(),getBarData.getUnitCode());
 
 							itemAmount = itemPrice*reqQueue.getQtyAfter();
+							saleCode = userCode.getEmployeeCode();
 							
 							if (getBarData.getCode()!=null){
 							
 							if (vCheckExistItem==0){
-								 vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,barcode,unitCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,checkoutAmount,rate1,checkerCode,checkoutDate,isCancel,isCheckOut,lineNumber) "+ "values("
-									+reqQueue.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+reqQueue.getBarCode()+"','"+getBarData.getUnitCode()+"',"+ reqQueue.getQtyAfter()+",0,0,"+reqQueue.getQtyAfter()+","+itemPrice+",0,"+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqQueue.getIsCancel()+",1,0)";
+								 vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,barcode,unitCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,checkoutAmount,rate1,checkerCode,checkoutDate,isCancel,isCheckOut,lineNumber,saleCode,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
+									+reqQueue.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+reqQueue.getBarCode()+"','"+getBarData.getUnitCode()+"',"+ reqQueue.getQtyAfter()+",0,0,"+reqQueue.getQtyAfter()+","+itemPrice+",0,"+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqQueue.getIsCancel()+",1,0,'"+saleCode+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
 								}else{
 								if(reqItem.getIsCancel()==0){
 									vQuery = "update QItem set checkoutQty="+reqQueue.getQtyAfter()+",price ="+itemPrice+",checkoutAmount="+itemAmount+",isCheckOut=1,checkerCode='"+userCode.getEmployeeCode()+"',checkoutDate = CURRENT_TIMESTAMP,isCancel=0 where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}else{
-									vQuery = "update QItem set isCancel=1,cancelCode='admin',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
+									vQuery = "update QItem set isCancel=1,cancelCode='"+saleCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}
 							}
 							System.out.println(vQuery);
@@ -312,7 +270,7 @@ public class CheckOutController {
 								
 								itemList.setBarCode(reqQueue.getBarCode());
 								itemList.setFilePath("");
-								itemList.setItemCategory("");
+								itemList.setItemCategory(getBarData.getCategoryCode());
 								itemList.setItemCode(getBarData.getCode());
 								itemList.setItemName(getBarData.getItemName());
 								itemList.setItemPrice(itemPrice);
@@ -376,14 +334,6 @@ public class CheckOutController {
 			response.setIsSuccess(false);
 			response.setProcess("checkOutManageItem");
 			response.setProcessDesc("Error : qID not generate");
-			editOrder.setResponse(response);
-			editOrder.setItem(itemList);
-		}
-		}else{
-			isSuccess=false;
-			response.setIsSuccess(false);
-			response.setProcess("checkOutManageItem");
-			response.setProcessDesc("Error : Access is deny !!!!!");
 			editOrder.setResponse(response);
 			editOrder.setItem(itemList);
 		}

@@ -3,9 +3,10 @@ package bean;
 public class PK_Reqs_ManageItemBean {
 	private String accessToken;
 	private String barCode;
-	private int qtyBefore;
+	private double qtyBefore;
 	private int qId;
 	private int isCancel;
+	private String saleCode;
 	
 	
 	public PK_Reqs_ManageItemBean() {
@@ -14,13 +15,14 @@ public class PK_Reqs_ManageItemBean {
 	
 	
 	public PK_Reqs_ManageItemBean(String accessToken, String barCode,
-			int qtyBefore, int qId, int isCancel) {
+			double qtyBefore, int qId, int isCancel, String saleCode) {
 
 		this.accessToken = accessToken;
 		this.barCode = barCode;
 		this.qtyBefore = qtyBefore;
 		this.qId = qId;
 		this.isCancel = isCancel;
+		this.saleCode = saleCode;
 	}
 	
 	
@@ -36,10 +38,10 @@ public class PK_Reqs_ManageItemBean {
 	public void setBarCode(String barCode) {
 		this.barCode = barCode;
 	}
-	public int getQtyBefore() {
+	public double getQtyBefore() {
 		return qtyBefore;
 	}
-	public void setQtyBefore(int qtyBefore) {
+	public void setQtyBefore(double qtyBefore) {
 		this.qtyBefore = qtyBefore;
 	}
 	public int getqId() {
@@ -53,6 +55,16 @@ public class PK_Reqs_ManageItemBean {
 	}
 	public void setIsCancel(int isCancel) {
 		this.isCancel = isCancel;
+	}
+
+
+	public String getSaleCode() {
+		return saleCode;
+	}
+
+
+	public void setSaleCode(String saleCode) {
+		this.saleCode = saleCode;
 	}
 	
 	

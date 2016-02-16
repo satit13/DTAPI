@@ -38,9 +38,9 @@ public class QueueController {
 				Statement stmt = ds.getStatement(dbName);
 			    
 				if (keyword.equals("")){
-					Textstring="select top 10 * from Queue where iscancel = 0 order by docno desc";
+					Textstring="";
 				}else{
-					Textstring="select * from Queue where iscancel = 0 and code like'%"+keyword+"%' or name like '%"+keyword+"%' order by docno desc";
+					Textstring="";
 				}
 				
 			   	System.out.println(Textstring);
