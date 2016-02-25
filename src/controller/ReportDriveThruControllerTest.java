@@ -15,8 +15,8 @@ public class ReportDriveThruControllerTest {
 		RP_Resp_QueueMasterBean dataList = new RP_Resp_QueueMasterBean();
 		ReportDriveThruController rcl = new ReportDriveThruController();
 		
-		search.setBeginDate("2016-02-15");
-		search.setEndDate("2016-02-15");
+		search.setBeginDate("2016-01-01");
+		search.setEndDate("2016-01-10");
 		
 		dataList = rcl.QueueMaster("SmartQ", search);
 		

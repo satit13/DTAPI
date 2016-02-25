@@ -24,6 +24,7 @@ import bean.PK_Resp_ManageItemListBean;
 import bean.PK_Resp_NewOrderHeaderBean;
 import bean.PK_Resp_OrderPendingBean;
 import bean.CT_Resp_ResponseBean;
+import bean.PK_Resp_SaleCodeDetails;
 import bean.PK_Resp_SearchCarBrandBean;
 import bean.SearchBean;
 import bean.PK_Reqs_DeleteOrderBean;
@@ -59,6 +60,8 @@ public class PickupController {
 	getDataFromData getData = new getDataFromData();
 	
 	LoginBean userCode = new LoginBean();
+	
+	PK_Resp_SaleCodeDetails sale = new PK_Resp_SaleCodeDetails();
 
 	DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
 	//dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
@@ -106,7 +109,7 @@ public class PickupController {
 						Textstring="select * from Queue where docDate = '"+dateFormat.format(dateNow)+"' and (docno like'%"+keyword.getKeyword()+"%' or carLicence like '%"+keyword.getKeyword()+"%') order by createDate";
 					}
 					
-				   	System.out.println(new Date(System.currentTimeMillis())+" : "+Textstring);
+				   	//System.out.println(new Date(System.currentTimeMillis())+" : "+Textstring);
 				    
 				    ResultSet rs = stmt.executeQuery(Textstring);
 				    
@@ -137,7 +140,7 @@ public class PickupController {
 					rs.close();
 					stmt.close();
 					
-				   	if (roworder==0) { //¤é¹ËÒäÁè¾º
+				   	if (roworder==0) { //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¾º
 		    		    order.setOrder(orderList);
 				   	}  
 			
@@ -154,6 +157,7 @@ public class PickupController {
 		String docDate;
 		String vGenNewDocNo = "";
 		String saleCode = "";
+		String saleName="";
 		boolean success;
 		int qId;
 		int vCountToken=0;
@@ -175,7 +179,8 @@ public class PickupController {
 		
 		userCode = getData.searchUserAccessToken(reqOrder.getAccessToken());
 		saleCode = userCode.getEmployeeCode();
-		vQuery ="insert into Queue(docNo,docDate,status,isCancel,customerId,warehouseId,customerCode,whCode,carLicence,carBrand,creatorCode,createDate,qId,saleCode) values("+"'"+vGenNewDocNo+"','"+dateFormat.format(dateNow)+"',0,0,'99999',0,'99999','S1-B','"+reqOrder.getCarNumber()+"','"+reqOrder.getCarBrand()+"','"+saleCode+"',CURRENT_TIMESTAMP,"+qId+",'"+saleCode+"'"+")";
+		saleName = userCode.getEmployeeName();
+		vQuery ="insert into Queue(docNo,docDate,status,isCancel,customerId,warehouseId,customerCode,whCode,carLicence,carBrand,creatorCode,createDate,qId,saleCode,saleName) values("+"'"+vGenNewDocNo+"','"+dateFormat.format(dateNow)+"',0,0,'99999',0,'99999','S1-B','"+reqOrder.getCarNumber()+"','"+reqOrder.getCarBrand()+"','"+saleCode+"',CURRENT_TIMESTAMP,"+qId+",'"+saleCode+"','"+saleName+"')";
 		System.out.println(vQuery); 
 		try {
 				isSuccess= excecute.execute(dbName,vQuery);
@@ -197,6 +202,7 @@ public class PickupController {
 		}else{
 			
 			response.setIsSuccess(false);
+			
 			response.setProcess("newPickup");
 			response.setProcessDesc("Error : No Have CarLicence");
 			qIdOrder.setqId(0);
@@ -219,6 +225,8 @@ public class PickupController {
 		int vCountToken =0;
 		
 		String saleCode="";
+		String saleName="";
+		String creatorCode="";
 		
 		
 		if (reqEdit.getCarNumber()!=null && reqEdit.getCarNumber()!=""){
@@ -228,19 +236,39 @@ public class PickupController {
 					
 					userCode = getData.searchUserAccessToken(reqEdit.getAccessToken());
 					
-					System.out.println("ÃËÑÊ¾¹Ñ¡§Ò¹¤×Í "+reqEdit.getSaleCode());
+					System.out.println("ï¿½ï¿½ï¿½Ê¾ï¿½Ñ¡ï¿½Ò¹ï¿½ï¿½ï¿½ "+reqEdit.getSaleCode());
+					
+					creatorCode = userCode.getEmployeeCode();
 					
 					if (reqEdit.getSaleCode()=="" || reqEdit.getSaleCode() == null){
 						saleCode = userCode.getEmployeeCode();
+						saleName = userCode.getEmployeeName();
 						
-						vQuery ="update Queue set status = "+reqEdit.getStatus()+",carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						if (reqEdit.getStatus()!=2){
+							vQuery ="update Queue set status = "+reqEdit.getStatus()+",carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+creatorCode+"',editDate = CURRENT_TIMESTAMP,salecode='"+saleCode+"',salename='"+saleName+"' where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						}else{
+							vQuery ="update Queue set status = "+reqEdit.getStatus()+" where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						}
 					}else{
-						saleCode = reqEdit.getSaleCode();
 						
-						vQuery ="update Queue set status = "+reqEdit.getStatus()+",saleCode = '"+saleCode+"',carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						sale = getData.searchSaleCode(reqEdit.getSaleCode());
+						if (sale.getIsExist()==1){
+							saleCode = sale.getSaleCode();
+							saleName = sale.getSaleName();
+						}else{
+							saleCode = "N/A";
+							saleName = "-";
+						}
+						
+						if (reqEdit.getStatus()!=2){
+							vQuery ="update Queue set status = "+reqEdit.getStatus()+",saleCode = '"+saleCode+"',carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+creatorCode+"',editDate = CURRENT_TIMESTAMP,salecode='"+saleCode+"',salename='"+saleName+"' where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						}else{
+							vQuery ="update Queue set status = "+reqEdit.getStatus()+" where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
+						}
+						
 					}
 					
-					System.out.println("ÃËÑÊ¾¹Ñ¡§Ò¹ãËÁè¤×Í "+saleCode);
+					System.out.println("ï¿½ï¿½ï¿½Ê¾ï¿½Ñ¡ï¿½Ò¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ "+saleCode);
 
 					//vQuery ="update Queue set status = "+reqEdit.getStatus()+",saleCode = '"+saleCode+"',carLicence = '"+reqEdit.getCarNumber()+"',"+"carBrand= '"+reqEdit.getCarBrand()+"',editorCode='"+saleCode+"',editDate = CURRENT_TIMESTAMP where docDate = '"+dateFormat.format(dateNow)+"' and qid ="+reqEdit.getqId();
 					System.out.println(vQuery); 
@@ -369,6 +397,7 @@ public class PickupController {
 		PK_Resp_GetItemBarcodeBean getBarData = new PK_Resp_GetItemBarcodeBean();
 		PK_Resp_GetDataQueue getQueue = new PK_Resp_GetDataQueue();
 		PK_Resp_ManageItemListBean itemList = new PK_Resp_ManageItemListBean();
+		PK_Resp_SaleCodeDetails lastSale = new PK_Resp_SaleCodeDetails();
 		
 		LoginBean userCode = new LoginBean();
 		int vCheckExistItem=0;
@@ -376,6 +405,8 @@ public class PickupController {
 		double itemAmount=0.0;
 		String vQuerySub;
 		String saleCode="";
+		String saleName="";
+		String creatorCode="";
 		
 		dtDoc.applyPattern("yyyy-MM-dd");
 		dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
@@ -398,29 +429,48 @@ public class PickupController {
 							vCheckExistItem = getData.checkItemExistQueue(reqItem);
 							itemPrice = getData.searchItemPrice(getBarData.getCode(),reqItem.getBarCode(), getBarData.getUnitCode());
 							
+							
+							
+							creatorCode = userCode.getEmployeeCode();
+							
 							if (reqItem.getSaleCode() == "" || reqItem.getSaleCode() == null) {
-								saleCode = userCode.getEmployeeCode();
+								lastSale = getData.searchTopSaleCode(reqItem.getqId());
+								saleCode = lastSale.getSaleCode();
+								saleName = lastSale.getSaleName();
+								
+								System.out.println("No Have SaleCode");
+								
+								
 							}else{
-								saleCode = reqItem.getSaleCode();
+								sale = getData.searchSaleCode(reqItem.getSaleCode());
+								System.out.println("Have SaleCode");
+								if (sale.getIsExist()==1){
+									saleCode = sale.getSaleCode();
+									saleName = sale.getSaleName();
+								}else{
+									saleCode = "N/A";
+									saleName = "-";
+								}
+								
 							}
 							
 							itemAmount = itemPrice*reqItem.getQtyBefore();
 							
-							System.out.println("ItemPrice : "+itemPrice);
+							System.out.println("SaleName : "+saleCode+"/"+saleName);
 							
-							System.out.println("ItemAmount : "+itemAmount);
+							//System.out.println("ItemAmount : "+itemAmount);
 							
 							
 							if (getBarData.getCode()!=null && getBarData.getCode()!=""){
 
 							if (vCheckExistItem==0){
-								vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,unitCode,barCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,rate1,pickerCode,pickDate,isCancel,lineNumber,saleCode,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
-									+reqItem.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+getBarData.getUnitCode()+"','"+reqItem.getBarCode()+"',"+ reqItem.getQtyBefore()+","+reqItem.getQtyBefore()+",0,0,"+itemPrice+","+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqItem.getIsCancel()+",0,'"+saleCode+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
+								vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,unitCode,barCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,rate1,pickerCode,pickDate,isCancel,lineNumber,saleCode,saleName,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
+									+reqItem.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+getBarData.getUnitCode()+"','"+reqItem.getBarCode()+"',"+ reqItem.getQtyBefore()+","+reqItem.getQtyBefore()+",0,0,"+itemPrice+","+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqItem.getIsCancel()+",0,'"+saleCode+"','"+saleName+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
 							}else{
 								if(reqItem.getIsCancel()==0 && reqItem.getQtyBefore()!= 0){
-									vQuery = "update QItem set qty ="+reqItem.getQtyBefore()+",pickQty="+reqItem.getQtyBefore()+",price ="+itemPrice+",itemAmount="+itemAmount+",isCancel=0 where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
+									vQuery = "update QItem set qty ="+reqItem.getQtyBefore()+",pickQty="+reqItem.getQtyBefore()+",price ="+itemPrice+",itemAmount="+itemAmount+",isCancel=0,salecode='"+saleCode+"',salename='"+saleName+"' where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}else{
-									vQuery = "update QItem set qty=0,pickQty = 0,itemAmount=0,isCancel=1,cancelCode='"+saleCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
+									vQuery = "update QItem set qty=0,pickQty = 0,itemAmount=0,isCancel=1,cancelCode='"+creatorCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and barCode ='"+reqItem.getBarCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}
 								
 								System.out.println("Update Cancel :"+vQuery);

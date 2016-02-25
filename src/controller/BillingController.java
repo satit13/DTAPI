@@ -519,6 +519,9 @@ public class BillingController {
 							bill.setBillHeader(header);
 							bill.setBillSub(sub);
 							
+							
+							System.out.println("SaleCodeBill = "+bill.getBillHeader().getSaleCode());
+							
 							vQuery = "set dateformat ymd  insert into dbo.BCARInvoice(docNo,docDate,taxNo,taxType,arCode,arName,arAddress,cashierCode,"
 							+"machineNo,machineCode,posStatus,billTime,creditType,creditNo,cofirmNo,chargeWord,creditBaseAmount,"
 							+"chargeAmount,grandTotal,coupongAmount,changeAmount,departCode,creditDay,dueDate,saleCode,taxRate,"
@@ -825,6 +828,7 @@ public class BillingController {
 					while(rs.next()){
 						checkexist++;
 						coupon.setAmount(rs.getDouble("couponval"));
+						
 					}
 					
 					vQuery = "exec dbo.USP_DT_VerifyCoupon '"+coupong.getCouponCode()+"'";

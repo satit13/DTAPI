@@ -274,6 +274,7 @@ public RP_Resp_SumCheckOutDataBean CheckOutData(String dbName,RP_Reqs_SearchQueB
 				evt.setCategoryName(rs.getString("catname"));
 				evt.setSecCode(rs.getString("secManCode"));
 				evt.setSecName(rs.getString("secManName"));
+				evt.setItemId(rs.getInt("itemid"));
 //				
 //				
 //				listitem.clear();

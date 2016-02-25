@@ -8,9 +8,12 @@ import java.sql.Statement;
 public enum QueueConnect {
 
 INSTANCE;
-	private static final String url = "jdbc:mysql://report.nopadol.com:3306/test?useUnicode=true&characterEncoding=utf-8";
+	//private static final String url = "jdbc:mysql://192.168.0.89:3306/qdb?useUnicode=true&characterEncoding=utf-8";
+	private static final String url = "jdbc:mysql://report.nopadol.com:3306/qdb?useUnicode=true&characterEncoding=utf-8";
 	private static final String user = "satit";
 	private static final String pwd = "[ibdkifu88";
+	//private static final String user = "satit";
+	//private static final String pwd = "[ibdkifu88";
 
 	private Connection conn = null;
 
@@ -35,6 +38,7 @@ INSTANCE;
 	
 	public Statement getStatement(String urlpassing) throws SQLException {
 		Statement stmt = null;
+		//urlpassing = "jdbc:mysql://192.168.0.89:3306/"+urlpassing+"?useUnicode=true&characterEncoding=utf-8";
 		urlpassing = "jdbc:mysql://report.nopadol.com:3306/"+urlpassing+"?useUnicode=true&characterEncoding=utf-8";
 		 System.out.println(urlpassing);
 		// get connection

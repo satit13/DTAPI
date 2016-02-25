@@ -25,6 +25,7 @@ import bean.PK_Resp_GetDataQueue;
 import bean.PK_Resp_GetItemBarcodeBean;
 import bean.PK_Resp_ManageItemBean;
 import bean.PK_Resp_ManageItemListBean;
+import bean.PK_Resp_SaleCodeDetails;
 
 import bean.CK_Resp_PendingProductListBean;
 
@@ -49,6 +50,8 @@ public class CheckOutController {
 	CK_Resp_ManageItemListBean respItem = new CK_Resp_ManageItemListBean();
 	
 	LoginBean userCode = new LoginBean();
+	
+	PK_Resp_SaleCodeDetails sale = new PK_Resp_SaleCodeDetails();
 	
 	private java.text.SimpleDateFormat dtDoc= new java.text.SimpleDateFormat();
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
@@ -75,7 +78,7 @@ public class CheckOutController {
 				
 				Statement st = ds.getStatement("SmartQ");
 				vQuery="select a.docNo,a.docDate,a.carLicence,a.customerCode,a.qId,b.itemCode,b.itemName as barcodeName,b.unitCode, "+
-						" b.qty,b.pickQty,b.checkoutqty,b.rate1,b.price,b.itemAmount,b.pickercode,b.isCheckOut,b.checkoutAmount,b.isCancel,b.barcode, "+
+						" b.qty,b.pickQty,b.checkoutqty,b.rate1,b.price,b.itemAmount,concat(b.salecode,'/',b.salename) as pickercode,b.isCheckOut,b.checkoutAmount,b.isCancel,b.barcode, "+
 						" (select sum(itemAmount) from QItem where docno = a.docNo) as totalamount "+
 						" from 	Queue a "+
 						" inner join QItem b on a.docno = b.docNo "+
@@ -203,6 +206,8 @@ public class CheckOutController {
 		
 		String vQuerySub;
 		String saleCode="";
+		String saleName="";
+		String creatorCode="";
 		
 		int vCountToken = 0;
 		
@@ -219,6 +224,7 @@ public class CheckOutController {
 		
 		userCode = getData.searchUserAccessToken(reqQueue.getAccessToken());
 		
+		creatorCode = userCode.getEmployeeCode();
 		
 		getBarData = getData.searchItemCode(reqQueue.getBarCode());
 		getQueue = getData.searchQueue(reqQueue.getqId());
@@ -244,17 +250,18 @@ public class CheckOutController {
 
 							itemAmount = itemPrice*reqQueue.getQtyAfter();
 							saleCode = userCode.getEmployeeCode();
+							saleName = userCode.getEmployeeName();
 							
 							if (getBarData.getCode()!=null){
 							
 							if (vCheckExistItem==0){
-								 vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,barcode,unitCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,checkoutAmount,rate1,checkerCode,checkoutDate,isCancel,isCheckOut,lineNumber,saleCode,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
-									+reqQueue.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+reqQueue.getBarCode()+"','"+getBarData.getUnitCode()+"',"+ reqQueue.getQtyAfter()+",0,0,"+reqQueue.getQtyAfter()+","+itemPrice+",0,"+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqQueue.getIsCancel()+",1,0,'"+saleCode+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
+								 vQuery = "insert into QItem(qId,docNo,docDate,itemCode,itemName,barcode,unitCode,qty,pickQty,loadQty,checkoutQty,price,itemAmount,checkoutAmount,rate1,checkerCode,checkoutDate,isCancel,isCheckOut,lineNumber,saleCode,saleName,expertCode,departCode,departName,catCode,catName,secManCode,secManName,averageCost) "+ "values("
+									+reqQueue.getqId()+",'"+getQueue.getDocNo()+"','"+dateFormat.format(dateNow)+"','"+ getBarData.getCode()+"','"+getBarData.getItemName()+"','"+reqQueue.getBarCode()+"','"+getBarData.getUnitCode()+"',"+ reqQueue.getQtyAfter()+",0,0,"+reqQueue.getQtyAfter()+","+itemPrice+",0,"+itemAmount+","+getBarData.getRate1()+",'"+userCode.getEmployeeCode()+ "',CURRENT_TIMESTAMP,"+reqQueue.getIsCancel()+",1,0,'"+saleCode+"','"+saleName+"','"+getBarData.getExpertCode()+"','"+getBarData.getDepartmentCode()+"','"+getBarData.getDepartmentName()+"','"+getBarData.getCategoryCode()+"','"+getBarData.getCategoryName()+"','"+getBarData.getSecCode()+"','"+getBarData.getSecName()+"',"+getBarData.getAverageCost()+" )";
 								}else{
 								if(reqItem.getIsCancel()==0){
 									vQuery = "update QItem set checkoutQty="+reqQueue.getQtyAfter()+",price ="+itemPrice+",checkoutAmount="+itemAmount+",isCheckOut=1,checkerCode='"+userCode.getEmployeeCode()+"',checkoutDate = CURRENT_TIMESTAMP,isCancel=0 where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}else{
-									vQuery = "update QItem set isCancel=1,cancelCode='"+saleCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
+									vQuery = "update QItem set isCancel=1,cancelCode='"+creatorCode+"',cancelDate = CURRENT_TIMESTAMP where qId = "+reqItem.getqId()+" and docNo ='"+getQueue.getDocNo()+"' and itemCode='"+getBarData.getCode()+"' and unitCode ='"+getBarData.getUnitCode()+"'";
 								}
 							}
 							System.out.println(vQuery);

@@ -22,7 +22,9 @@ import bean.LoginBean;
 import bean.PK_Reqs_ManageItemBean;
 import bean.PK_Resp_GetDataQueue;
 import bean.PK_Resp_GetItemBarcodeBean;
+import bean.PK_Resp_SaleCodeDetails;
 
+import connect.NPSQLConn;
 import connect.QueueConnect;
 import connect.SQLConn;
 
@@ -38,6 +40,7 @@ public class getDataFromData {
 	private final QueueConnect ds = QueueConnect.INSTANCE;
 	private final SQLConn sqlDS = SQLConn.INSTANCE;
 	private final QueueConnect dsTK = QueueConnect.INSTANCE;
+	private final NPSQLConn npDS = NPSQLConn.INSTANCE;
 
 	private java.text.SimpleDateFormat dtDoc= new java.text.SimpleDateFormat();
 	private java.text.SimpleDateFormat dt= new java.text.SimpleDateFormat();
@@ -55,6 +58,8 @@ public class getDataFromData {
 	CT_Resp_ResponseBean creditcardRes = new CT_Resp_ResponseBean();
 	CT_Resp_ResponseBean coupongRes = new CT_Resp_ResponseBean();
 	
+	PK_Resp_SaleCodeDetails sale = new PK_Resp_SaleCodeDetails();
+	
 	LoginBean userCode = new LoginBean();
 	
 
@@ -62,15 +67,20 @@ public class getDataFromData {
 
 		try{
 			Statement st = sqlDS.getSqlStatement("POS");
+			//Statement st = npDS.getSqlStatement("192.168.0.7", "bcnp");
 			
-			vQuery = "select a.itemcode,a.unitcode,rate,b.name1 as barcodename,'-' as expertcode, "+
-					" '-'  as departmentcode,'-'  as departname, "+
-					" '-'  as categorycode,'-'  as category, "+
-					" '-'  as secCode,'-'  as secName,isnull(b.averagecost,0) as averagecost "+
-					" from dbo.bcbarcodemaster a " +
-					" inner join dbo.bcitem  b on a.itemcode = b.code " +
-					" inner join dbo.bcstkpacking c on a.itemcode = c.itemcode and a.unitcode = c.unitcode " +
-					" where barcode = '"+barcode+"'";
+//			vQuery = "select a.itemcode,a.unitcode,rate,b.name1 as barcodename,isnull(d.expertcode,'') as expertcode, "+
+//					" isnull(d.departmentcode,'') as departmentcode,isnull(d.department,'') as departname, "+
+//					" isnull(d.categorycode,'') as categorycode,isnull(d.category,'') as category, "+
+//					" isnull(e.salecode,'') as secCode,isnull(e.salename,'') as secName,isnull(b.averagecost,0) as averagecost "+
+//					" from dbo.bcbarcodemaster a " +
+//					" inner join dbo.bcitem  b on a.itemcode = b.code " +
+//					" inner join dbo.bcstkpacking c on a.itemcode = c.itemcode and a.unitcode = c.unitcode " +
+//					" left join nebula.npdb.dbo.tb_inc_itemextension d on b.code = d.itemcode" +
+//					" left join nebula.npdb.dbo.tb_ic_sectiondepartment e on d.expertcode = e.catcode and year(getdate()) = e.atyear and month(getdate()) = e.atmonth and d.departmentcode = e.departmentcode " +
+//					" where barcode = '"+barcode+"'";
+			
+			vQuery = "exec dbo.USP_DT_SearchBarCodeDetails '"+barcode+"'";
 
 			ResultSet rs = st.executeQuery(vQuery);
 			
@@ -129,6 +139,44 @@ public class getDataFromData {
 		}
 
 		return resQue;
+	}
+	
+	
+	public PK_Resp_SaleCodeDetails searchTopSaleCode(int getQ){
+		dtDoc.applyPattern("yyyy-MM-dd");
+		dt.applyPattern("yyyy-MM-dd HH:mm:ss.S");
+		
+		
+		Date dateNow = new Date();
+		
+		sale.setIsExist(0);
+		sale.setSaleCode("");
+		sale.setSaleName("");
+		
+		try{
+			Statement st = ds.getStatement("SmartQ");
+			
+			vQuery = "call USP_DT_SelectTopSaleCode ("+getQ +")";
+			System.out.println("GetDocno :"+vQuery);
+			ResultSet rs = st.executeQuery(vQuery);
+			while(rs.next()){
+				sale.setIsExist(1);
+				sale.setSaleCode(rs.getString("code"));
+				sale.setSaleName(rs.getString("name"));
+			}
+		    rs.close();
+		    st.close();
+		    
+		}catch(Exception e){
+			sale.setIsExist(0);
+			sale.setSaleCode("");
+			sale.setSaleName("");
+			e.printStackTrace();
+		}finally{
+			ds.close();
+		}
+
+		return sale;
 	}
 	
 	
@@ -241,13 +289,13 @@ public class getDataFromData {
 		try{
 			Statement st = ds.getStatement("SmartConfig");
 			
-		    vQuery="select u.code,u.role from  User as u inner join UserAccess as ua on u.code=ua.userCode and ua.userUUID='"+accessToken+"'"
+		    vQuery="select u.code,u.name,u.role from  User as u inner join UserAccess as ua on u.code=ua.userCode and ua.userUUID='"+accessToken+"'"
 		    		+" order by ua.dateTimeStamp DESC LIMIT 1" ;
 		    
 			ResultSet rs = st.executeQuery(vQuery);
 			while(rs.next()){
 				userCode.setEmployeeCode(rs.getString("code"));
-
+				userCode.setEmployeeName(rs.getString("name"));
 			}
 			
 		    rs.close();
@@ -260,6 +308,39 @@ public class getDataFromData {
 		}
 
 		return userCode;
+	}
+	
+	
+	public PK_Resp_SaleCodeDetails searchSaleCode(String saleCode){
+		try {
+			
+			sale.setIsExist(0);
+			sale.setSaleCode("");
+			sale.setSaleName("");
+			
+			Statement st = ds.getStatement("SmartQ");
+			vQuery = "call USP_DT_SearchSale ('"+saleCode+"')";
+			
+			System.out.println("Search Sale :"+vQuery);
+			
+			ResultSet rs = st.executeQuery(vQuery);
+			while(rs.next()){
+				sale.setIsExist(1);
+				sale.setSaleCode(rs.getString("code"));
+				sale.setSaleName(rs.getString("name"));
+			}
+			rs.close();
+			st.close();
+		} catch (SQLException e) {
+			// TODO: handle exception
+			sale.setIsExist(0);
+			sale.setSaleCode("");
+			sale.setSaleName("");
+		}finally{
+			ds.close();
+		}
+		
+		return sale;
 	}
 	
 	public int checkItemExistQueue(PK_Reqs_ManageItemBean reqItem){
@@ -541,7 +622,7 @@ public class getDataFromData {
 			System.out.println("vCountToken : "+vQuery);
 			ResultSet rsTK = stmtTK.executeQuery(vQuery);
 			while (rsTK.next()) {
-				access = 2;//rs.getInt("vCount");
+				access = rsTK.getInt("vCount");
 			}
 			rsTK.close();
 			stmtTK.close();

@@ -36,6 +36,7 @@ public class RP_Resp_QueueDetails {
 	private String categoryName;
 	private String secCode;
 	private String secName;
+	private int itemId;
 	
 	public RP_Resp_QueueDetails() {
 		super();
@@ -52,7 +53,7 @@ public class RP_Resp_QueueDetails {
 			String checkerName, int itemCancel,String invoiceNo,String expertCode, 
 			String departmentCode,String departmentName, String categoryCode, 
 			String categoryName,
-			String secCode, String secName) {
+			String secCode, String secName, int itemId) {
 		super();
 		this.docYear = docYear;
 		this.docMonth = docMonth;
@@ -87,6 +88,7 @@ public class RP_Resp_QueueDetails {
 		this.categoryName = categoryName;
 		this.secCode = secCode;
 		this.secName = secName;
+		this.itemId = itemId;
 	}
 
 	public String getDocYear() {
@@ -351,5 +353,13 @@ public class RP_Resp_QueueDetails {
 
 	public void setSecName(String secName) {
 		this.secName = secName;
+	}
+	
+	public int getItemId(){
+		return itemId;
+	}
+	
+	public void setItemId(int itemId){
+		this.itemId = itemId;
 	}
 }

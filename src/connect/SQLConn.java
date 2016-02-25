@@ -7,8 +7,8 @@ import java.sql.Statement;
 
 public enum SQLConn {
 	INSTANCE;
+	//private static final String url = "jdbc:sqlserver://192.168.0.26; databaseName=pos;useUnicode=true;characterEncoding=utf-8";
 	private static final String url = "jdbc:sqlserver://192.168.0.182; databaseName=pos;useUnicode=true;characterEncoding=utf-8";
-	//private static final String url = "jdbc:mysql://192.168.0.89:3306/qdb?useUnicode=true&characterEncoding=utf-8";
 	private static final String user = "sa";
 	private static final String pwd = "[ibdkifu";
 
@@ -36,6 +36,7 @@ public enum SQLConn {
 	
 	public Statement getSqlStatement(String urlpassing) throws SQLException {
 		Statement stmt = null;
+		//urlpassing = "jdbc:sqlserver://192.168.0.26; databaseName="+urlpassing+";useUnicode=true;characterEncoding=utf-8";
 		urlpassing = "jdbc:sqlserver://192.168.0.182; databaseName="+urlpassing+";useUnicode=true;characterEncoding=utf-8";
 		 System.out.println(urlpassing);
 		// get connection

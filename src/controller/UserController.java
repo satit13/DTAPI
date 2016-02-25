@@ -121,7 +121,7 @@ public class UserController {
 		    ds.close();
 		}
 		
-		// à¡çº log UserAccess
+		// ï¿½ï¿½ log UserAccess
 		Textstring="insert UserAccess(userId,userCode,userUUID,dateTimeStamp)"
 				+" select '" +loginResponse.getUser().getId()+"','"+loginResponse.getUser().getCode()
 					+"','"+loginResponse.getAccessToken()+"','"+loginResponse.getAccessDatetime()+"'";
@@ -153,9 +153,11 @@ public class UserController {
 			Statement stmt = ds.getStatement(dbName);
 		    
 		    Textstring="select u.code,u.role from  User as u inner join UserAccess as ua on u.code=ua.userCode and ua.userUUID='"+userSearch.getAccessToken()+"'"
-		    		+" where u.role=1 order by ua.dateTimeStamp DESC LIMIT 1" ;
+		    		//+" where u.role=1 order by ua.dateTimeStamp DESC LIMIT 1" ;
+		    		+" order by ua.dateTimeStamp DESC LIMIT 1" ;
 		    
 		   	System.out.println(Textstring);
+		
 		    
 		    ResultSet rs = stmt.executeQuery(Textstring);
 		    
@@ -166,6 +168,8 @@ public class UserController {
 		    userList.clear();
 		    userList.add(user);
 		    userSearchResponse.setUser(userList);
+		    
+		   	System.out.println("UserCode=");
 		   
 		    if ( rs.next() != false ) 
 	        	{	
@@ -194,7 +198,7 @@ public class UserController {
 		} finally {
 		    ds.close();
 		}
-		if (response.getIsSuccess()==true)  { // µÃÇ¨ÊÍº security
+		if (response.getIsSuccess()==true)  { // ï¿½ï¿½Ç¨ï¿½Íº security
 			try {
 				
 				// get connection
@@ -238,7 +242,7 @@ public class UserController {
 					
 	    		    System.out.println(user.getCode());
 				}
-			   	if (roworder==0) { //¤é¹ËÒäÁè¾º
+			   	if (roworder==0) { //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¾º
 			   		loginResponseTemplage(userSearch.getKeyword());
 			   		userList.clear();
 			   		userList.add(user);
